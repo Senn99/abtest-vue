@@ -19,7 +19,17 @@ const modules = modulesFiles.keys().reduce((modules, modulePath) => {
 
 const store = new Vuex.Store({
   modules,
-  getters
+  getters,
+  state: {
+    ab_user: {
+      userId: 1,
+      companyId: 1,
+      status: 0,
+      name: '张三'
+    },
+    api: 'http://localhost:8080'
+  }
+
 })
 
 export default store

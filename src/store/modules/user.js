@@ -1,13 +1,35 @@
-import { login, logout, getInfo } from '@/api/user'
+import { logout, getInfo } from '@/api/user'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 import router, { resetRouter } from '@/router'
+import { ab_login } from '@/api/abtest/user'
 
 const state = {
   token: getToken(),
+  status: -1,
+  c_status: -1,
+  company_id: -1,
   name: '',
   avatar: '',
   introduction: '',
   roles: []
+}
+
+const tokens = {
+  0: 'admin-token',
+  1: 'editor-token'
+}
+
+const rolesMap = {
+  0: {
+    roles: ['admin'],
+    introduction: 'I am a super administrator',
+    avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif'
+  },
+  1: {
+    roles: ['editor'],
+    introduction: 'I am an editor',
+    avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif'
+  }
 }
 
 const mutations = {
@@ -20,6 +42,15 @@ const mutations = {
   SET_NAME: (state, name) => {
     state.name = name
   },
+  SET_STATUS: (state, status) => {
+    state.status = status
+  },
+  SET_C_STATUS: (state, c_status) => {
+    state.c_status = c_status
+  },
+  SET_COMPANY_ID: (state, company_id) => {
+    state.company_id = company_id
+  },
   SET_AVATAR: (state, avatar) => {
     state.avatar = avatar
   },
@@ -31,14 +62,24 @@ const mutations = {
 const actions = {
   // user login
   login({ commit }, userInfo) {
-    const { username, password } = userInfo
+    const { email, password } = userInfo
     return new Promise((resolve, reject) => {
-      login({ username: username.trim(), password: password }).then(response => {
-        const { data } = response
-        commit('SET_TOKEN', data.token)
-        setToken(data.token)
+      ab_login({ 'email': email.trim(), 'password': password }).then(response => {
+        const data = response.data.obj
+        // console.log(tokens[data.status])
+        const token = tokens[data.status]
+        commit('SET_TOKEN', token)
+        setToken(token)
+        const user = rolesMap[data.status]
+        commit('SET_NAME', data.name)
+        commit('SET_STATUS', data.status)
+        commit('SET_C_STATUS', data.status)
+        commit('SET_COMPANY_ID', data.companyId)
+        commit('SET_AVATAR', user.avatar)
+        commit('SET_INTRODUCTION', user.introduction)
         resolve()
       }).catch(error => {
+        alert(error)
         reject(error)
       })
     })
@@ -47,28 +88,13 @@ const actions = {
   // get user info
   getInfo({ commit, state }) {
     return new Promise((resolve, reject) => {
-      getInfo(state.token).then(response => {
-        const { data } = response
-
-        if (!data) {
-          reject('Verification failed, please Login again.')
-        }
-
-        const { roles, name, avatar, introduction } = data
-
-        // roles must be a non-empty array
-        if (!roles || roles.length <= 0) {
-          reject('getInfo: roles must be a non-null array!')
-        }
-
-        commit('SET_ROLES', roles)
-        commit('SET_NAME', name)
-        commit('SET_AVATAR', avatar)
-        commit('SET_INTRODUCTION', introduction)
-        resolve(data)
-      }).catch(error => {
-        reject(error)
-      })
+      // const { data } = state.status
+      // console.log(state.status)
+      if (state.status === -1) {
+        reject('Verification failed, please Login again.')
+      }
+      // console.log(rolesMap[state.status].roles)
+      resolve(rolesMap[state.status].roles)
     })
   },
 
