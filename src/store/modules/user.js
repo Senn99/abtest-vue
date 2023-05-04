@@ -9,6 +9,7 @@ const state = {
   c_status: -1,
   company_id: -1,
   name: '',
+  email: '',
   avatar: '',
   introduction: '',
   roles: []
@@ -33,6 +34,9 @@ const rolesMap = {
 }
 
 const mutations = {
+  SET_EMAIL: (state, email) => {
+    state.email = email
+  },
   SET_TOKEN: (state, token) => {
     state.token = token
   },
@@ -73,6 +77,7 @@ const actions = {
         const user = rolesMap[data.status]
         commit('SET_NAME', data.name)
         commit('SET_STATUS', data.status)
+        commit('SET_EMAIL', data.email)
         commit('SET_C_STATUS', data.companyUserStatus)
         commit('SET_COMPANY_ID', data.companyId)
         commit('SET_AVATAR', user.avatar)
