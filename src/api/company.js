@@ -1,5 +1,75 @@
 import request from '@/utils/ab_request'
 
+export function updateFlightTraffic(data) {
+  return request({
+    url: '/flight/traffic',
+    method: 'POST',
+    data
+  })
+}
+
+export function deleteLayer(layerId) {
+  return request({
+    url: '/company/layer/delete',
+    method: 'POST',
+    params: { 'layerId': layerId }
+  })
+}
+
+export function editCreateApplyStatus2Refuse(apply_id) {
+  return request({
+    url: '/company/create/apply/refuse',
+    method: 'POST',
+    params: { 'apply_id': apply_id }
+  })
+}
+
+export function editCreateApplyStatus2Agree(apply_id) {
+  return request({
+    url: '/company/create/apply/agree',
+    method: 'POST',
+    params: { 'apply_id': apply_id }
+  })
+}
+
+export function fetchCreateApplyList() {
+  return request({
+    url: '/company/create/apply',
+    method: 'GET'
+  })
+}
+
+export function createCompany(data) {
+  return request({
+    url: '/company/create',
+    method: 'POST',
+    data
+  })
+}
+
+export function addCompanyJoinApply(data) {
+  return request({
+    url: '/company/join/create',
+    method: 'POST',
+    data
+  })
+}
+
+export function listAllCompany() {
+  return request({
+    url: '/companys',
+    method: 'GET'
+  })
+}
+
+export function addLayer(data) {
+  return request({
+    url: '/company/layer/create',
+    method: 'POST',
+    data
+  })
+}
+
 export function fetchLayerList(companyId) {
   return request({
     url: '/company/layers?companyId=' + companyId,
@@ -74,7 +144,7 @@ export function fetchCompanyLayerList(company_id) {
   return request({
     url: '/company/layers',
     method: 'GET',
-    params: { 'company_id': company_id }
+    params: { 'companyId': company_id }
   })
 }
 

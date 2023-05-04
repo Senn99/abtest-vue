@@ -41,16 +41,17 @@
     <div class="f">
       <el-divider />
       <span v-bind="flight.flight.status">实验状态：{{ flight.flight.status | statusFilter }}</span>
-      <el-button type="primary" @click="editFlightStatus(1)">
+      <el-divider />
+      <el-button v-if="flight.flight.status === 0" type="primary" @click="editFlightStatus(1)">
         测试实验
       </el-button>
-      <el-button type="success" @click="editFlightStatus(2)">
+      <el-button v-if="flight.flight.status === 1 || flight.flight.status === 3" type="success" @click="editFlightStatus(2)">
         运行实验
       </el-button>
-      <el-button type="warning" @click="editFlightStatus(3)">
+      <el-button v-if="flight.flight.status === 1 || flight.flight.status === 2" type="warning" @click="editFlightStatus(3)">
         暂停实验
       </el-button>
-      <el-button type="danger" @click="endFlight">
+      <el-button v-if="flight.flight.status !== 0 && flight.flight.status !== 4" type="danger" @click="endFlight">
         结束实验
       </el-button>
       <el-divider />
@@ -58,6 +59,27 @@
     <div class="f">
       <el-divider />
       实验流量：{{ flight.flight.traffic / 10 + '%' }}
+      <el-button v-if="flight.flight.status !== 4" type="primary" @click="updateVisiable = true">
+        更改实验流量
+      </el-button>
+      <div v-if="updateVisiable">
+        <el-divider />
+        <el-form ref="updateForm" :model="updateForm" autocomplete="on" label-position="left">
+
+          <el-form-item prop="traffic">
+            <el-input
+              ref="traffic"
+              v-model="updateForm.traffic"
+              placeholder="traffic"
+              name="traffic"
+              autocomplete="on"
+            />
+          </el-form-item>
+          <el-button :loading="loading" type="primary" @click.native.prevent="updateVisiable = false">取消</el-button>
+          <el-button :loading="loading" type="primary" @click.native.prevent="handleUpdate">更新</el-button>
+        </el-form>
+      </div>
+
       <el-divider />
     </div>
     <div class="f">
@@ -115,7 +137,7 @@
 
 <script>
 
-import { fetchFlightById, editFlightStatus2Run, editFlightStatus2Test, editFlightStatus2Pause, endFlight } from '@/api/company'
+import { fetchFlightById, editFlightStatus2Run, editFlightStatus2Test, editFlightStatus2Pause, endFlight, updateFlightTraffic } from '@/api/company'
 
 export default {
   name: 'FlightDetail',
@@ -142,6 +164,10 @@ export default {
   },
   data() {
     return {
+      updateForm: {
+        traffic: 0
+      },
+      updateVisiable: false,
       flight_id: undefined,
       flight: undefined
     }
@@ -156,28 +182,53 @@ export default {
     },
     getFlight(flight_id) {
       fetchFlightById(flight_id).then(response => {
-        this.flight = response.data.obj
+        this.$data.flight = response.data.obj
       })
     },
     editFlightStatus(status) {
       if (status === 1) {
-        editFlightStatus2Test(this.$data.flight.flightId)
+        editFlightStatus2Test(this.$data.flight.flightId).then(response => {
+          this.getFlight(this.$data.flight_id)
+        })
       }
       if (status === 2) {
-        editFlightStatus2Run(this.$data.flight.flightId)
+        editFlightStatus2Run(this.$data.flight.flightId).then(response => {
+          this.getFlight(this.$data.flight_id)
+        })
       }
       if (status === 3) {
-        editFlightStatus2Pause(this.$data.flight.flightId)
+        editFlightStatus2Pause(this.$data.flight.flightId).then(response => {
+          this.getFlight(this.$data.flight_id)
+        })
       }
-      this.$router.go(0)
+
       this.$message({
         message: '操作Success',
         type: 'success'
       })
     },
     endFlight() {
-      endFlight(this.$data.flight.flightId)
-      this.$router.go(0)
+      endFlight(this.$data.flight.flightId).then(response => {
+        this.getFlight(this.$data.flight_id)
+      })
+    },
+    handleUpdate() {
+      this.updateForm.flightId = this.flight.flightId
+      this.updateForm.layerId = this.flight.layer.layerId
+      updateFlightTraffic(this.updateForm).then(response => {
+        if (response.data.obj) {
+          this.$message({
+            message: '更新流量成功',
+            type: 'success'
+          })
+          this.getFlight(this.$data.flight_id)
+        } else {
+          this.$message({
+            message: '更新流量失败',
+            type: 'warning'
+          })
+        }
+      })
     }
   }
 }

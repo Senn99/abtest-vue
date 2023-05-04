@@ -20,12 +20,15 @@
     <div class="reflux_params">
       {{ reflux.updateTime }}
     </div>
-    <el-divider>分流接口操作</el-divider>
-    <div class="reflux_params">
-      <el-button v-if="reflux" type="success" @click="handleEdit">
-        修改
-      </el-button>
+    <div v-if="actionVisible">
+      <el-divider>分流接口操作</el-divider>
+      <div class="reflux_params">
+        <el-button v-if="reflux" type="success" @click="handleEdit">
+          修改
+        </el-button>
+      </div>
     </div>
+
     <el-dialog title="edit reflux" :visible.sync="dialogFormVisible">
       <el-form :model="temp" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
         <el-form-item label="URL" prop="type">
@@ -95,15 +98,17 @@ export default {
         status: 0
       },
       statusOptions,
-      dialogFormVisible: false
+      dialogFormVisible: false,
+      actionVisible: false
     }
   },
   created() {
+    this.actionVisible = this.$store.getters.c_status !== 2
     this.getReflux()
   },
   methods: {
     getReflux() {
-      getReflux(this.$store.state.ab_user.companyId).then(response => {
+      getReflux(this.$store.getters.company_id).then(response => {
         console.log(response.data)
         this.reflux = response.data.obj
       })

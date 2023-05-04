@@ -125,6 +125,7 @@ export default {
   },
   created() {
     this.getList()
+    this.listQuery.companyId = this.$store.getters.company_id
   },
   methods: {
     getList() {

@@ -11,6 +11,7 @@ import Layout from '@/layout'
 // // import chartsRouter from './modules/charts'
 import tableRouter from './modules/table'
 import companyRouter from './modules/company'
+import manageRouter from '@/router/modules/manage'
 // import nestedRouter from './modules/nested'
 
 /**
@@ -108,8 +109,9 @@ export const asyncRoutes = [
   /** when your routing map is too long, you can split it into small modules **/
   // componentsRouter,
   // nestedRouter,
-  tableRouter,
+  // tableRouter,
   companyRouter,
+  manageRouter,
   {
     path: '/flight',
     hidden: true,
@@ -119,7 +121,10 @@ export const asyncRoutes = [
         path: 'create',
         component: () => import('@/views/abtest/flight_create'),
         name: 'flight create',
-        meta: { title: '实验创建' }
+        meta: {
+          title: '实验创建',
+          roles: ['admin', 'editor']
+        }
       }
     ]
   },
@@ -132,19 +137,10 @@ export const asyncRoutes = [
         path: 'detail',
         component: () => import('@/views/abtest/flight_detail'),
         name: 'flight create',
-        meta: { title: '实验详情' }
-      }
-    ]
-  },
-  {
-    path: '/theme',
-    component: Layout,
-    children: [
-      {
-        path: 'index',
-        component: () => import('@/views/theme/index'),
-        name: 'Theme',
-        meta: { title: 'Theme', icon: 'theme' }
+        meta: {
+          title: '实验详情',
+          roles: ['admin', 'editor']
+        }
       }
     ]
   },

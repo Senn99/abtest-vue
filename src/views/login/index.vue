@@ -17,7 +17,6 @@
           name="email"
           type="email"
           tabindex="1"
-          autocomplete="on"
         />
       </el-form-item>
 
@@ -45,16 +44,73 @@
         </el-form-item>
       </el-tooltip>
 
-      <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin">Login</el-button>
+      <el-button type="primary" style="width:100%;margin-bottom:30px;" @click="handleLogin">Login</el-button>
 
     </el-form>
 
-    <el-dialog title="Or connect with" :visible.sync="showDialog">
-      Can not be simulated on local, so please combine you own business simulation! ! !
-      <br>
-      <br>
-      <br>
-      <social-sign />
+    <el-dialog title="Join Company" :visible.sync="dialogFormVisible">
+      <el-table
+        :key="tableKey"
+        v-loading="listLoading"
+        :data="clist"
+        border
+        fit
+        highlight-current-row
+        style="width: 100%;"
+      >
+        <el-table-column label="ID" prop="id" align="center" width="80">
+          <template slot-scope="{row}">
+            <span>{{ row.companyId }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="名称" min-width="30px" align="center">
+          <template slot-scope="{row}">
+            <span>{{ row.name }} </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="创建者名称" min-width="30px" align="center">
+          <template slot-scope="{row}">
+            <span>{{ row.creatorName }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="企业创建时间" min-width="20px" align="center">
+          <template slot-scope="{row}">
+            <span>
+              {{ row.createTime }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" align="center" width="100px" class-name="small-padding fixed-width" prop="data">
+          <template slot-scope="{row}">
+            <el-button type="primary" size="mini" @click="handleJoin(row.companyId)">
+              申请加入
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div v-if="createFormVisible" style="text-align: -webkit-center; font-size: 20px; color: #36a3f7">
+        <el-divider>创建企业</el-divider>
+        <el-form :model="company" label-position="left" label-width="100px">
+          <el-form-item label="Name" prop="type" style="color: white">
+            <el-input v-model="company.companyName" />
+          </el-form-item>
+        </el-form>
+        <el-button type="primary" @click="handleCreateCompany">
+          CreateCompany
+        </el-button>
+        <el-divider />
+      </div>
+
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="createFormVisible = true">
+          Create
+        </el-button>
+        <el-button @click="dialogFormVisible = false">
+          Cancel
+        </el-button>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -62,6 +118,7 @@
 <script>
 import SocialSign from './components/SocialSignin'
 import { ab_login } from '@/api/abtest/user'
+import { listAllCompany, addCompanyJoinApply, createCompany } from '@/api/company'
 
 export default {
   name: 'Login',
@@ -72,12 +129,20 @@ export default {
         email: '123456@qq.com',
         password: '123456'
       },
+      apply: {},
       passwordType: 'password',
       capsTooltip: false,
       loading: false,
       showDialog: false,
       redirect: undefined,
-      otherQuery: {}
+      otherQuery: {},
+      dialogFormVisible: false,
+      createFormVisible: false,
+      clist: null,
+      userId: -1,
+      company: {
+        companyName: ''
+      }
     }
   },
   watch: {
@@ -122,18 +187,48 @@ export default {
     },
     handleLogin() {
       this.loading = true
-      this.$store.dispatch('user/login', this.loginForm)
-        .then(() => {
-          ab_login(this.loginForm).then(response => {
-            this.$store.state.ab_user = response.data.obj
+
+      ab_login(this.loginForm).then(response => {
+        const user = response.data.obj
+        if (response.data.code === 200) {
+          this.$notify({
+            title: 'Success',
+            message: response.data.message,
+            type: 'success',
+            duration: 2000
           })
 
-          this.$router.push({ path: this.redirect || '/', query: this.otherQuery })
-          this.loading = false
-        })
-        .catch(() => {
-          this.loading = false
-        })
+          if (user.companyId == null) {
+            this.apply.userId = user.userId
+            this.userId = user.userId
+            listAllCompany().then(response => {
+              // alert(response.data)
+              this.clist = response.data.obj.list
+            })
+            this.dialogFormVisible = true
+          } else {
+            this.$store.dispatch('user/login', this.loginForm)
+              .then(() => {
+                ab_login(this.loginForm).then(response => {
+                  this.$store.state.ab_user = response.data.obj
+                })
+
+                this.$router.push({ path: this.redirect || '/', query: this.otherQuery })
+                this.loading = false
+              })
+              .catch(() => {
+                this.loading = false
+              })
+          }
+        } else if (response.data.code === 400) {
+          this.$notify({
+            title: 'Warming',
+            message: '账号密码错误',
+            type: 'success',
+            duration: 2000
+          })
+        }
+      })
     },
     getOtherQuery(query) {
       return Object.keys(query).reduce((acc, cur) => {
@@ -142,25 +237,50 @@ export default {
         }
         return acc
       }, {})
+    },
+    handleJoin(companyId) {
+      this.apply.companyId = companyId
+      // alert(this.apply)
+      // console.log(this.apply)
+      addCompanyJoinApply(this.apply).then(response => {
+        if (response.data.obj) {
+          this.$notify({
+            title: 'Success',
+            message: 'Join Apply Successfully',
+            type: 'success',
+            duration: 2000
+          })
+        } else {
+          this.$notify({
+            title: 'Error',
+            message: 'Join Apply Exist..',
+            type: 'warning',
+            duration: 2000
+          })
+        }
+      })
+    },
+    handleCreateCompany() {
+      this.company.userId = this.userId
+      console.log(this.company)
+      createCompany(this.company).then(response => {
+        if (response.data.obj) {
+          this.$notify({
+            title: 'Success',
+            message: 'Create Apply Successfully',
+            type: 'success',
+            duration: 2000
+          })
+        } else {
+          this.$notify({
+            title: 'Error',
+            message: 'Create Apply Exist..',
+            type: 'warning',
+            duration: 2000
+          })
+        }
+      })
     }
-    // afterQRScan() {
-    //   if (e.key === 'x-admin-oauth-code') {
-    //     const code = getQueryObject(e.newValue)
-    //     const codeMap = {
-    //       wechat: 'code',
-    //       tencent: 'code'
-    //     }
-    //     const type = codeMap[this.auth_type]
-    //     const codeName = code[type]
-    //     if (codeName) {
-    //       this.$store.dispatch('LoginByThirdparty', codeName).then(() => {
-    //         this.$router.push({ path: this.redirect || '/' })
-    //       })
-    //     } else {
-    //       alert('第三方登录失败')
-    //     }
-    //   }
-    // }
   }
 }
 </script>

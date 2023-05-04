@@ -73,13 +73,13 @@ const actions = {
         const user = rolesMap[data.status]
         commit('SET_NAME', data.name)
         commit('SET_STATUS', data.status)
-        commit('SET_C_STATUS', data.status)
+        commit('SET_C_STATUS', data.companyUserStatus)
         commit('SET_COMPANY_ID', data.companyId)
         commit('SET_AVATAR', user.avatar)
         commit('SET_INTRODUCTION', user.introduction)
         resolve()
       }).catch(error => {
-        alert(error)
+        // alert(error)
         reject(error)
       })
     })
@@ -89,12 +89,15 @@ const actions = {
   getInfo({ commit, state }) {
     return new Promise((resolve, reject) => {
       // const { data } = state.status
-      // console.log(state.status)
+      console.log(state)
       if (state.status === -1) {
-        reject('Verification failed, please Login again.')
+        reject('请重新登录！！')
+        // reject()
       }
-      // console.log(rolesMap[state.status].roles)
-      resolve(rolesMap[state.status].roles)
+      const roles = rolesMap[state.status].roles
+      // alert(roles)
+      commit('SET_ROLES', roles)
+      resolve(roles)
     })
   },
 

@@ -5,7 +5,7 @@
         prop="flight.name"
         label="实验名称"
       >
-        <el-input v-model="flightForm.email" placeholder="vue-test" class="small" />
+        <el-input v-model="flightForm.flight.name" placeholder="abtest-test" class="small" />
       </el-form-item>
       <el-form-item
         prop="owner.userId"
@@ -36,7 +36,7 @@
           <el-option
             v-for="item in layer"
             :key="item.layerId"
-            :label="`${item.token}/${item.flow_unit}/${item.traffic / 10}`"
+            :label="`${item.token}/${item.flowUnit}/${item.traffic / 10}`"
             :value="item.layerId"
           />
         </el-select>
@@ -117,7 +117,7 @@ export default {
         }],
         flight: {
           companyId: 1,
-          name: 'vue-test',
+          name: 'ab-test',
           status: 0,
           traffic: 5,
           layerId: 1,
@@ -128,11 +128,11 @@ export default {
         },
         versions: [
           {
-            name: 'vue-v1',
+            name: 'test-v1',
             config: '{color:red}'
           },
           {
-            name: 'vue-v1',
+            name: 'test-v2',
             config: '{color:blue}'
           }
         ]
@@ -141,7 +141,7 @@ export default {
     }
   },
   created() {
-    this.listLayers(1)
+    this.listLayers(this.$store.getters.company_id)
   },
   methods: {
 
@@ -152,10 +152,17 @@ export default {
     },
     submitForm() {
       addFlight(this.flightForm).then(response => {
-        this.$message({
-          message: response.data,
-          type: 'success'
-        })
+        if (response.data.code === 200) {
+          this.$message({
+            message: '创建实验成功。。',
+            type: 'success'
+          })
+        } else {
+          this.$message({
+            message: '创建实验失败。。原因：' + response.data.message,
+            type: 'warning'
+          })
+        }
       })
     },
     addUser() {

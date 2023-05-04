@@ -1,12 +1,7 @@
 <template>
   <div class="app-container">
-    <!--    <div class="filter-container">-->
-    <!--      <el-input v-model="listQuery.name" placeholder="name" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter"/>-->
-    <!--      <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">-->
-    <!--        搜索-->
-    <!--      </el-button>-->
-    <!--    </div>-->
-    <el-divider>企业用户名单</el-divider>
+
+    <el-divider>企业名单</el-divider>
     <el-table
       :key="tableKey"
       v-loading="listLoading"
@@ -18,7 +13,7 @@
     >
       <el-table-column label="ID" prop="id" align="center" width="80">
         <template slot-scope="{row}">
-          <span>{{ row.userId }}</span>
+          <span>{{ row.companyId }}</span>
         </template>
       </el-table-column>
 
@@ -27,30 +22,21 @@
           <span>{{ row.name }} </span>
         </template>
       </el-table-column>
-      <el-table-column label="邮箱" min-width="30px" align="center">
+      <el-table-column label="创建者名称" min-width="30px" align="center">
         <template slot-scope="{row}">
-          <span>{{ row.email }}</span>
+          <span>{{ row.creatorName }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="企业身份" min-width="20px" align="center">
+      <el-table-column label="企业创建时间" min-width="20px" align="center">
         <template slot-scope="{row}">
-          <el-tag :type="row.status ">
-            {{ row.companyUserStatus | companyStatusFilter }}
-          </el-tag>
+          <span>
+            {{ row.createTime }}
+          </span>
         </template>
       </el-table-column>
-      <!--      <el-table-column label="查看详情" align="center" width="100px" class-name="small-padding fixed-width" prop="data">-->
-      <!--        <template>-->
-      <!--          <el-button type="primary" size="mini" @click="handleDetail">-->
-      <!--            查看-->
-      <!--          </el-button>-->
-      <!--        </template>-->
-      <!--      </el-table-column>-->
     </el-table>
 
-    <!--    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList"/>-->
-
-    <el-divider>企业申请加入名单</el-divider>
+    <el-divider>企业创建申请名单</el-divider>
 
     <el-table
       :key="tableKey"
@@ -63,7 +49,13 @@
     >
       <el-table-column label="ID" prop="id" align="center" width="80">
         <template slot-scope="{row}">
-          <span>{{ row.joinApplyId }}</span>
+          <span>{{ row.createApplyId }}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="企业名称" min-width="30px" align="center">
+        <template slot-scope="{row}">
+          <span>{{ row.companyName }} </span>
         </template>
       </el-table-column>
 
@@ -89,25 +81,23 @@
       </el-table-column>
 
       <el-table-column label="操作" min-width="50px" align="center">
-        <template v-if="row.status===0 && updateJoinVisible" slot-scope="{row}">
-          <el-button type="success" @click="handleApplyStatus2Agree(row.joinApplyId)">
+        <template v-if="row.status===0" slot-scope="{row}">
+          <el-button type="success" @click="handleApplyStatus2Agree(row.createApplyId)">
             通过
           </el-button>
-          <el-button type="danger" @click="handleApplyStatus2Refuse(row.joinApplyId)">
+          <el-button type="danger" @click="handleApplyStatus2Refuse(row.createApplyId)">
             拒绝
           </el-button>
         </template>
       </el-table-column>
     </el-table>
 
-    <!--    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList"/>-->
   </div>
 </template>
 
 <script>
-import { fetchUserList, fetchJoinApplyList, editApplyStatus2Agree, editApplyStatus2Refuse } from '@/api/company'
+import { fetchCreateApplyList, editCreateApplyStatus2Agree, editCreateApplyStatus2Refuse, listAllCompany } from '@/api/company'
 import waves from '@/directive/waves' // waves directive
-import { parseTime } from '@/utils'
 import Pagination from '@/components/Pagination' // secondary package based on el-pagination
 
 export default {
@@ -115,15 +105,6 @@ export default {
   components: { Pagination },
   directives: { waves },
   filters: {
-    // 页面的过滤条件
-    companyStatusFilter(status) {
-      const statusMap = {
-        0: '创建者',
-        1: '管理员',
-        2: '普通用户'
-      }
-      return statusMap[status]
-    },
     applyStatusFilter(status) {
       const statusMap = {
         0: '已创建',
@@ -138,38 +119,22 @@ export default {
       tableKey: 0,
       list: null,
       applyList: null,
-      total: 0,
-      listLoading: true,
-      updateJoinVisible: false,
-      listQuery: {
-        companyId: 1,
-        page: 1,
-        limit: 20,
-        name: undefined
-      }
+      listLoading: true
     }
   },
   created() {
-    this.getList()
     this.getApplyList()
-    this.updateJoinVisible = this.$store.getters.c_status !== 2
-    this.listQuery.companyId = this.$store.getters.company_id
+    this.getList()
   },
   methods: {
     getList() {
-      this.listLoading = true
-      fetchUserList(this.listQuery).then(response => {
+      listAllCompany().then(response => {
         this.list = response.data.obj.list
-        this.total = response.data.obj.total
-        // Just to simulate the time of the request
-        setTimeout(() => {
-          this.listLoading = false
-        }, 1.5 * 1000)
       })
     },
     getApplyList() {
       this.listLoading = true
-      fetchJoinApplyList(this.$store.getters.company_id).then(response => {
+      fetchCreateApplyList().then(response => {
         this.applyList = response.data.obj.list
         // this.total = response.data.obj.total
         // Just to simulate the time of the request
@@ -180,7 +145,7 @@ export default {
       })
     },
     handleApplyStatus2Agree(apply_id) {
-      editApplyStatus2Agree(apply_id).then(response => {
+      editCreateApplyStatus2Agree(apply_id).then(response => {
         if (response.data.obj) {
           this.$notify({
             title: 'Success',
@@ -188,11 +153,20 @@ export default {
             type: 'success',
             duration: 2000
           })
+        } else {
+          this.$notify({
+            title: 'Failed',
+            message: 'Agree Failed',
+            type: 'warning',
+            duration: 2000
+          })
         }
+        this.getList()
+        this.getApplyList()
       })
     },
     handleApplyStatus2Refuse(apply_id) {
-      editApplyStatus2Refuse(apply_id).then(response => {
+      editCreateApplyStatus2Refuse(apply_id).then(response => {
         if (response.data.obj) {
           this.$notify({
             title: 'Success',
@@ -200,9 +174,15 @@ export default {
             type: 'success',
             duration: 2000
           })
-          this.getApplyList()
-          this.$forceUpdate()
+        } else {
+          this.$notify({
+            title: 'Failed',
+            message: 'Refuse Failed',
+            type: 'warning',
+            duration: 2000
+          })
         }
+        this.getApplyList()
       })
     }
 
